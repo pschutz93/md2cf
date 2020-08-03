@@ -3,6 +3,8 @@ import getpass
 import os
 import pprint
 import sys
+import random
+import string
 from collections import Counter
 from pathlib import Path
 from typing import List
@@ -190,6 +192,14 @@ def upsert_page(
             with attachment_path.open("rb") as fp:
                 confluence.upload_attachment(page=existing_page, fp=fp)
 
+def fix_titles(pages_to_upload):
+    titles = set()
+    for page in pages_to_upload:
+        if page.title in titles:
+            page.title += ' ' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
+        titles.add(page.title)
+    return pages_to_upload
+
 
 def main():
     args = get_parser().parse_args()
@@ -259,12 +269,7 @@ def main():
         title for title, count in page_title_counts.most_common() if count > 1
     ]
     if colliding_titles:
-        sys.stderr.write(
-            "Some documents have the same title. Update them or use --force-unique:\n"
-        )
-        for title in colliding_titles:
-            sys.stderr.write(f"{title}\n")
-        exit(1)
+        pages_to_upload = fix_titles(pages_to_upload)
 
     preface_markup = ""
     if args.preface_markdown:
