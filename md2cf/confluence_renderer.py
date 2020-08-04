@@ -59,12 +59,6 @@ class ConfluenceRenderer(mistune.Renderer):
         self.attachments = list()
         self.title = None
 
-    def header(self, text, level, raw=None):
-        if self.title is None and level == 1:
-            self.title = text
-
-        return super(ConfluenceRenderer, self).header(text, level, raw=raw)
-
     def structured_macro(self, name):
         return ConfluenceTag("structured-macro", attrib={"name": name})
 
