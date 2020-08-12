@@ -1,6 +1,8 @@
 import mistune
 import urllib.parse as urlparse
 from pathlib import Path
+import os
+import re
 
 
 class ConfluenceTag(object):
@@ -13,7 +15,6 @@ class ConfluenceTag(object):
         self.attrib = attrib
         self.children = []
         self.cdata = cdata
-
     def render(self):
         namespaced_name = self.add_namespace(self.name, namespace=self.namespace)
         namespaced_attribs = {
@@ -50,10 +51,11 @@ class ConfluenceTag(object):
 
 
 class ConfluenceRenderer(mistune.Renderer):
-    def __init__(self, **kwargs):
+    def __init__(self, space="", **kwargs):
         super().__init__(**kwargs)
         self.attachments = list()
         self.title = None
+        self.space = space
 
     def reinit(self):
         self.attachments = list()
@@ -90,11 +92,25 @@ class ConfluenceRenderer(mistune.Renderer):
         parsed_source = urlparse.urlparse(src)
         if not parsed_source.netloc:
             # Local file, requires upload
-            basename = Path(src).name
+            unescaped = urlparse.unquote(src)
+            basename = Path(unescaped).name
             url_tag = ConfluenceTag("attachment", attrib={"filename": basename}, namespace="ri")
-            self.attachments.append(src)
+            self.attachments.append(unescaped)
         else:
             url_tag = ConfluenceTag("url", attrib={"value": src}, namespace="ri")
         root_element.append(url_tag)
 
         return root_element.render()
+
+    def link(self, link, text=None, title=None):
+        if link[-3:] == '.md' or "notion.so" in link:
+            result = urlparse.urlparse(link)
+            baseName = os.path.basename(result.path)
+            pageTitle=os.path.splitext(baseName)[0]
+            pageTitle = pageTitle.replace("%20", "+")
+            pageTitle = re.sub(r"[\(\)\[\]&{}]", "", pageTitle)
+
+            link = "https://boltpay.atlassian.net/wiki/display/{space}/{title}".format(space=self.space, title=pageTitle)
+
+        print("<a href=\"{link}\">{title}</a>".format(link=link, title=title))
+        return "<a href=\"{link}\">{title}</a>".format(link=link, title=title)

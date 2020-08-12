@@ -249,11 +249,12 @@ def main():
                     collapse_empty=args.collapse_empty,
                     beautify_folders=args.beautify_folders,
                     use_pages_file=args.use_pages_file,
+                    space=args.space
                 )
             else:
                 try:
                     pages_to_upload.append(
-                        md2cf.document.get_page_data_from_file_path(file_name)
+                        md2cf.document.get_page_data_from_file_path(file_name, args.space)
                     )
                 except FileNotFoundError:
                     sys.stderr.write(f"File {file_name} does not exist\n")
